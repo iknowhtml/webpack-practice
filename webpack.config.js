@@ -1,15 +1,13 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
-const merge = require('webpack-merge');
-const parts = require('./webpack.parts');
 
 const PATHS = {
   app: path.join(__dirname, 'app'),
   build: path.join(__dirname, 'build'),
 };
 
-const common = merge([
+const commonConfig =
   {
     entry: {
       app: PATHS.app,
@@ -23,16 +21,40 @@ const common = merge([
         title:'Webpack Practice',
       }),
     ],
-  },
-]);
+  };
 
-function development() {
-  return merge([
-    common,
-    parts.lintJavascript({include: PATHS.app, options: {emitWarning: true}}),
-  ]);
+function productionConfig(){
+  return commonConfig;
+}
+
+
+function developmentConfig() {
+  const config = {
+    devServer: {
+      historyApiFallback: true,
+      hotOnly: true,
+      stats: 'errors-only',
+      host: process.env.HOST,
+      port: process.env.port,
+    },
+    plugins:[
+      new webpack.HotModuleReplacementPlugin(),
+      new webpack.NamedModulesPlugin(),
+    ],
+  }
+  return Object.assign(
+    {},
+    commonConfig,
+     config,
+     {
+       plugins: commonConfig.plugins.concat(config.plugins)
+     }
+   );
 }
 
 module.exports = function (env){
-  return common;
+  if(env === 'production'){
+    return productionConfig();
+  }
+  return developmentConfig();
 };
